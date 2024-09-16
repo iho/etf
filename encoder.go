@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 )
 
 // Constants for ETF version and term types
@@ -78,7 +77,6 @@ func encodeList(buf *bytes.Buffer, list List) ([]byte, error) {
 		}
 		buf.Write(termBytes)
 	}
-	buf.WriteByte(ETF_NIL)
 	return buf.Bytes(), nil
 }
 
@@ -123,7 +121,6 @@ func encodeFloat(buf *bytes.Buffer, floatVal Float) ([]byte, error) {
 }
 
 func encodeTuple(buf *bytes.Buffer, tuple Tuple) ([]byte, error) {
-	fmt.Println("tuple", tuple)
 	if len(tuple) <= 255 {
 		buf.WriteByte(ETF_SMALL_TUPLE)
 		buf.WriteByte(byte(len(tuple)))
@@ -137,12 +134,10 @@ func encodeTuple(buf *bytes.Buffer, tuple Tuple) ([]byte, error) {
 		}
 	}
 	for _, term := range tuple {
-		fmt.Println("term", term)
 		termBytes, err := EncodeErlTerm(term, false)
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("termBytes", termBytes)
 		buf.Write(termBytes)
 	}
 	return buf.Bytes(), nil

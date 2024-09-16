@@ -15,8 +15,7 @@ func DecodeErlTerm(data []byte) (ErlTerm, error) {
 	if data[0] != ETFVersion {
 		return nil, errors.New("invalid ETF version")
 	}
-	term, bytesRead, err := decodeTerm(data[1:])
-	fmt.Println("Total bytesRead:", bytesRead)
+	term, _, err := decodeTerm(data[1:])
 	return term, err
 }
 
@@ -27,7 +26,6 @@ func decodeTerm(data []byte) (ErlTerm, int, error) {
 	}
 
 	typeTag := data[0]
-	fmt.Println("Type tag:", typeTag)
 	switch typeTag {
 	case ETF_ATOM:
 		return decodeAtom(data[1:])
@@ -85,14 +83,12 @@ func decodeSmallTuple(data []byte) (ErlTerm, int, error) {
 		return nil, 0, errors.New("insufficient data for small tuple arity")
 	}
 	arity := int(data[0])
-	fmt.Println("Small tuple arity:", arity)
 	terms := make(Tuple, arity)
 
 	remaining := data[1:]
 	totalBytes := 1
 	for i := 0; i < arity; i++ {
 		term, bytesRead, err := decodeTerm(remaining)
-		fmt.Println("Bytes read:", bytesRead)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -100,7 +96,6 @@ func decodeSmallTuple(data []byte) (ErlTerm, int, error) {
 		remaining = remaining[bytesRead:]
 		totalBytes += bytesRead
 	}
-	fmt.Println("Small tuple terms:", terms)
 	return Tuple(terms), totalBytes, nil
 }
 
@@ -119,7 +114,6 @@ func decodeList(data []byte) (ErlTerm, int, error) {
 		return nil, 0, errors.New("insufficient data for list length")
 	}
 	length := int(binary.BigEndian.Uint32(data[:4]))
-	fmt.Println("List length:", length)
 	terms := make(List, length)
 	remaining := data[4:]
 	totalBytes := 4
@@ -141,11 +135,8 @@ func decodeBinary(data []byte) (ErlTerm, int, error) {
 		return nil, 0, errors.New("insufficient data for binary length")
 	}
 	length := int(binary.BigEndian.Uint32(data[:4]))
-	fmt.Println("Binary length:", length)
 	if len(data[4:]) < length {
 		return nil, 0, errors.New("insufficient data for binary")
 	}
-	bin := Binary(data[4 : 4+length])
-	fmt.Println("Binary data:", bin)
 	return Binary(data[4 : 4+length]), 5 + length, nil
 }

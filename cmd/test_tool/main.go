@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-	// Example term: {atom, 42}
 	a, b := etf.Atom("a"), etf.Atom("b")
 	term := etf.Tuple{
 		etf.Integer(999),
