@@ -13,3 +13,5 @@ type Tuple []ErlTerm
 type List []ErlTerm
 
 type Binary []byte
+
+type Nil struct{}

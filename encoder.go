@@ -16,6 +16,9 @@ const (
 	ETF_FLOAT         byte = 70
 	ETF_SMALL_TUPLE   byte = 104
 	ETF_LARGE_TUPLE   byte = 105
+	ETF_NIL           byte = 106
+	ETF_LIST          byte = 108
+	ETF_BINARY        byte = 109
 )
 
 func EncodeErlTerm(term ErlTerm, writeHeader bool) ([]byte, error) {
@@ -32,9 +35,51 @@ func EncodeErlTerm(term ErlTerm, writeHeader bool) ([]byte, error) {
 		return encodeFloat(buf, v)
 	case Tuple:
 		return encodeTuple(buf, v)
+	case List:
+		return encodeList(buf, v)
+	case Binary:
+		return encodeBinary(buf, v)
+	case Nil:
+		return writeNil(buf)
 	default:
 		return nil, errors.New("unsupported Erlang term type")
 	}
+}
+
+func writeNil(buf *bytes.Buffer) ([]byte, error) {
+	buf.WriteByte(ETF_NIL)
+	return buf.Bytes(), nil
+}
+
+func encodeBinary(buf *bytes.Buffer, bin Binary) ([]byte, error) {
+	buf.WriteByte(ETF_BINARY)
+	// Encode as 4-byte big endian
+	length := uint32(len(bin))
+	err := binary.Write(buf, binary.BigEndian, length)
+	if err != nil {
+		return nil, err
+	}
+	buf.Write(bin)
+	return buf.Bytes(), nil
+}
+
+func encodeList(buf *bytes.Buffer, list List) ([]byte, error) {
+	buf.WriteByte(ETF_LIST)
+	// Encode as 4-byte big endian
+	length := uint32(len(list))
+	err := binary.Write(buf, binary.BigEndian, length)
+	if err != nil {
+		return nil, err
+	}
+	for _, term := range list {
+		termBytes, err := EncodeErlTerm(term, false)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(termBytes)
+	}
+	buf.WriteByte(ETF_NIL)
+	return buf.Bytes(), nil
 }
 
 func encodeAtom(buf *bytes.Buffer, atom Atom) ([]byte, error) {

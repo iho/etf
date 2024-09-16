@@ -7,10 +7,16 @@ import (
 
 func main() {
 	// Example term: {atom, 42}
+	a, b := etf.Atom("a"), etf.Atom("b")
 	term := etf.Tuple{
+		etf.Integer(999),
 		etf.Atom("atom"),
-		etf.Integer(42),
+		etf.Nil{},
+		etf.List{a, b, a, b},
+		etf.Integer(10),
+		etf.Binary{0x01, 0x02, 0x03},
 		etf.Float(3.14),
+		etf.Integer(42),
 	}
 
 	// Encode the term
