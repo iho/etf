@@ -1,8 +1,9 @@
 package main
 
 import (
-	"etf"
 	"fmt"
+
+	"github.com/iho/etf"
 )
 
 func main() {
