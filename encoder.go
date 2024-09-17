@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 )
 
 // Constants for ETF version and term types
@@ -18,6 +19,7 @@ const (
 	ETF_NIL           byte = 106
 	ETF_LIST          byte = 108
 	ETF_BINARY        byte = 109
+	ETF_MAP           byte = 116
 )
 
 func EncodeErlTerm(term ErlTerm, writeHeader bool) ([]byte, error) {
@@ -38,11 +40,41 @@ func EncodeErlTerm(term ErlTerm, writeHeader bool) ([]byte, error) {
 		return encodeList(buf, v)
 	case Binary:
 		return encodeBinary(buf, v)
+	case Map:
+		return encodeMap(buf, v)
 	case Nil:
 		return writeNil(buf)
 	default:
+		fmt.Println("Unsupported type:", v)
 		return nil, errors.New("unsupported Erlang term type")
 	}
+}
+
+func encodeMap(buf *bytes.Buffer, m Map) ([]byte, error) {
+	buf.WriteByte(ETF_MAP)
+	// Encode as 4-byte big endian
+	length := uint32(len(m))
+	err := binary.Write(buf, binary.BigEndian, length)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range m {
+		_, ok := v.Key.(Nil)
+		if ok {
+			return nil, errors.New("map key cannot be nil")
+		}
+		keyBytes, err := EncodeErlTerm(v.Key, false)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(keyBytes)
+		termBytes, err := EncodeErlTerm(v.Value, false)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(termBytes)
+	}
+	return buf.Bytes(), nil
 }
 
 func writeNil(buf *bytes.Buffer) ([]byte, error) {

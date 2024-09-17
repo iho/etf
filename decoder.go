@@ -43,9 +43,36 @@ func decodeTerm(data []byte) (ErlTerm, int, error) {
 		return decodeList(data[1:])
 	case ETF_BINARY:
 		return decodeBinary(data[1:])
+	case ETF_MAP:
+		return decodeMap(data[1:])
 	default:
 		return nil, 0, fmt.Errorf("unsupported type tag: %d", typeTag)
 	}
+}
+
+func decodeMap(data []byte) (ErlTerm, int, error) {
+	if len(data) < 4 {
+		return nil, 0, errors.New("insufficient data for map length")
+	}
+	length := int(binary.BigEndian.Uint32(data[:4]))
+	terms := make(Map, 0, length)
+	remaining := data[4:]
+	totalBytes := 4
+	for i := 0; i < length; i++ {
+		key, keyBytes, err := decodeTerm(remaining)
+		if err != nil {
+			return nil, 0, err
+		}
+		value, valueBytes, err := decodeTerm(remaining[keyBytes:])
+		if err != nil {
+			return nil, 0, err
+		}
+
+		terms = append(terms, MapElem{Key: key, Value: value}) // store key-value pair in terms map
+		remaining = remaining[keyBytes+valueBytes:]
+		totalBytes += keyBytes + valueBytes
+	}
+	return terms, totalBytes, nil // return totalBytes without +1
 }
 
 // decodeAtom decodes an atom from the data.
@@ -96,7 +123,7 @@ func decodeSmallTuple(data []byte) (ErlTerm, int, error) {
 		remaining = remaining[bytesRead:]
 		totalBytes += bytesRead
 	}
-	return Tuple(terms), totalBytes, nil
+	return Tuple(terms), totalBytes + 1, nil
 }
 
 // decodeFloat decodes a float.

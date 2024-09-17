@@ -10,6 +10,13 @@ type Float float64
 
 type Tuple []ErlTerm
 
+type MapElem struct {
+	Key   ErlTerm
+	Value ErlTerm
+}
+
+type Map []MapElem
+
 type List []ErlTerm
 
 type Binary []byte
