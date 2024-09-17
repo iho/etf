@@ -72,7 +72,7 @@ func decodeMap(data []byte) (ErlTerm, int, error) {
 		remaining = remaining[keyBytes+valueBytes:]
 		totalBytes += keyBytes + valueBytes
 	}
-	return terms, totalBytes, nil // return totalBytes without +1
+	return terms, totalBytes + 1, nil // return totalBytes without +1
 }
 
 // decodeAtom decodes an atom from the data.
